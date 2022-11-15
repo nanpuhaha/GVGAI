@@ -21,8 +21,8 @@ class PythonClient:
 
 if __name__ == "__main__":
     if len(sys.argv) > 0:
-        print("Run with agent: " + str(sys.argv[1]))
+        print(f"Run with agent: {str(sys.argv[1])}")
         agentName = str(sys.argv[1])
-        lc = PythonClient(agentName + ".Agent")
+        lc = PythonClient(f"{agentName}.Agent")
     else:
         lc = PythonClient("Agents.Agent")

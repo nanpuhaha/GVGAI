@@ -235,7 +235,7 @@ class Agent(AbstractPlayer):
 
         elif self.action_selection_policy == 1:  # Epsilon-greedy
             epsilon = self.epsilon_final + (self.epsilon_start - self.epsilon_final)*\
-                      math.exp(-1.0*self.n_total_steps/self.epsilon_decay)
+                          math.exp(-1.0*self.n_total_steps/self.epsilon_decay)
 
             action_probabilities = np.zeros((self.n_actions,), dtype=np.float32)
 
@@ -276,9 +276,7 @@ class Agent(AbstractPlayer):
         Generates the dictionary of item type pairs by using the item types set.
         Avatar-Avatar pair is possibly redundant, yet is kept for the sake of generality.
         """
-        item_types_list = list(self.item_types)
-        item_types_list.sort()
-
+        item_types_list = sorted(self.item_types)
         for i in range(len(item_types_list)):
             for j in range(i, len(item_types_list)):
                 self.item_pairs_dict.append((item_types_list[i], item_types_list[j]))
@@ -292,34 +290,48 @@ class Agent(AbstractPlayer):
         """
         features = np.zeros((self.f_length_full,), dtype=np.float32)
 
-        all_observations = []
-
         # Creating an avatar observation to process it in standardized way
         avatar_observation = Observation()
         avatar_observation.itype = sso.avatarType
         avatar_observation.position.x = sso.avatarPosition[0]
         avatar_observation.position.y = sso.avatarPosition[1]
 
-        all_observations.append([avatar_observation])
+        all_observations = [[avatar_observation]]
+        all_observations.extend(
+            observations
+            for observations in sso.NPCPositions
+            if observations[0].itype in self.item_types
+        )
 
-        for observations in sso.NPCPositions:
-            if observations[0].itype in self.item_types:
-                all_observations.append(observations)
-        for observations in sso.immovablePositions:
-            if observations[0].itype in self.item_types:
-                all_observations.append(observations)
-        for observations in sso.movablePositions:
-            if observations[0].itype in self.item_types:
-                all_observations.append(observations)
-        for observations in sso.resourcesPositions:
-            if observations[0].itype in self.item_types:
-                all_observations.append(observations)
-        for observations in sso.portalsPositions:
-            if observations[0].itype in self.item_types:
-                all_observations.append(observations)
-        for observations in sso.fromAvatarSpritesPositions:
-            if observations[0].itype in self.item_types:
-                all_observations.append(observations)
+        all_observations.extend(
+            observations
+            for observations in sso.immovablePositions
+            if observations[0].itype in self.item_types
+        )
+
+        all_observations.extend(
+            observations
+            for observations in sso.movablePositions
+            if observations[0].itype in self.item_types
+        )
+
+        all_observations.extend(
+            observations
+            for observations in sso.resourcesPositions
+            if observations[0].itype in self.item_types
+        )
+
+        all_observations.extend(
+            observations
+            for observations in sso.portalsPositions
+            if observations[0].itype in self.item_types
+        )
+
+        all_observations.extend(
+            observations
+            for observations in sso.fromAvatarSpritesPositions
+            if observations[0].itype in self.item_types
+        )
 
         for i in range(len(all_observations)):
             item_type_1 = all_observations[i][0].itype
@@ -339,20 +351,23 @@ class Agent(AbstractPlayer):
                 for ii in range(len(all_observations[i])):
                     if all_observations[i][ii] is not None:
                         for jj in range(len(all_observations[j])):
-                            if all_observations[j][jj] is not None:
-                                if all_observations[i][ii].obsID != all_observations[j][jj].obsID:
-                                    distances = [(all_observations[j][jj].position.x-all_observations[i][ii].position.x)
-                                                 / self.blockSize,
-                                                 (all_observations[j][jj].position.y-all_observations[i][ii].position.y)
-                                                 / self.blockSize]
+                            if (
+                                all_observations[j][jj] is not None
+                                and all_observations[i][ii].obsID
+                                != all_observations[j][jj].obsID
+                            ):
+                                distances = [(all_observations[j][jj].position.x-all_observations[i][ii].position.x)
+                                             / self.blockSize,
+                                             (all_observations[j][jj].position.y-all_observations[i][ii].position.y)
+                                             / self.blockSize]
 
-                                    # Manhattan distance
-                                    distance = abs(distances[0]) + abs(distances[1])
+                                # Manhattan distance
+                                distance = abs(distances[0]) + abs(distances[1])
 
-                                    # Update for the closest observation pair
-                                    if distance < min_distance:
-                                        min_distance = distance
-                                        min_distances = [distances[0], distances[1]]
+                                # Update for the closest observation pair
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    min_distances = [distances[0], distances[1]]
 
                 # Minimum distance -> proximity
                 normalized_proximities = np.array([1.0 - abs(min_distances[0] / self.max_dimensions[0]),

@@ -7,7 +7,7 @@ import traceback
 
 from utils.SerializableStateObservation import SerializableStateObservation, Phase, Observation
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/..')
+sys.path.append(f'{os.path.dirname(os.path.realpath(__file__))}/..')
 sys.path.append('../sampleRandom')
 
 from CompetitionParameters import CompetitionParameters
@@ -111,9 +111,14 @@ class ClientComm:
         parsed_input = json.loads(input)
         self.sso.__dict__.update(parsed_input)
         if parsed_input.get('observationGrid'):
-            self.sso.observationGrid = [[[None for j in range(self.sso.observationGridMaxCol)]
-                                         for i in range(self.sso.observationGridMaxRow)]
-                                        for k in range(self.sso.observationGridNum)]
+            self.sso.observationGrid = [
+                [
+                    [None for _ in range(self.sso.observationGridMaxCol)]
+                    for _ in range(self.sso.observationGridMaxRow)
+                ]
+                for _ in range(self.sso.observationGridNum)
+            ]
+
             for i in range(self.sso.observationGridNum):
                 for j in range(len(parsed_input['observationGrid'][i])):
                     for k in range(len(parsed_input['observationGrid'][i][j])):
@@ -202,11 +207,18 @@ class ClientComm:
                 self.parse_json(js)
                 # self.sso = json.loads(js, object_hook=self.as_sso)
 
-            if self.sso.phase == "ACT":
-                if self.lastSsoType == LEARNING_SSO_TYPE.IMAGE or self.lastSsoType == "IMAGE" \
-                        or self.lastSsoType == LEARNING_SSO_TYPE.BOTH or self.lastSsoType == "BOTH":
-                    if self.sso.imageArray:
-                        self.sso.convertBytesToPng(self.sso.imageArray)
+            if (
+                self.sso.phase == "ACT"
+                and self.lastSsoType
+                in [
+                    LEARNING_SSO_TYPE.IMAGE,
+                    "IMAGE",
+                    LEARNING_SSO_TYPE.BOTH,
+                    "BOTH",
+                ]
+                and self.sso.imageArray
+            ):
+                self.sso.convertBytesToPng(self.sso.imageArray)
 
         except Exception as e:
             logging.exception(e)
@@ -274,7 +286,7 @@ class ClientComm:
         ect = ElapsedCpuTimer()
         ect.setMaxTimeMillis(CompetitionParameters.ACTION_TIME)
         action = str(self.player.act(self.sso, ect.copy()))
-        if (not action) or (action == ""):
+        if not action:
             action = "ACTION_NIL"
 
         self.lastSsoType = self.player.lastSsoType
@@ -284,7 +296,9 @@ class ClientComm:
             else:
                 self.io.writeToServer(self.lastMessageId, "ACTION_NIL" + "#" + self.lastSsoType, self.LOG)
         else:
-            self.io.writeToServer(self.lastMessageId, action + "#" + self.lastSsoType, self.LOG)
+            self.io.writeToServer(
+                self.lastMessageId, f"{action}#{self.lastSsoType}", self.LOG
+            )
 
     """
      * Manages the aresult sent to the agent. The time limit for this call will be TOTAL_LEARNING_TIME
@@ -308,10 +322,12 @@ class ClientComm:
         self.lastSsoType = self.player.lastSsoType
         if ect.exceededMaxTime():
             self.io.writeToServer(self.lastMessageId, "END_OVERSPENT", self.LOG)
+        elif self.global_ect.exceededMaxTime():
+            end_message = "END_VALIDATION" if self.sso.isValidation else "END_TRAINING"
+            self.io.writeToServer(self.lastMessageId, end_message, self.LOG)
         else:
-
-            if self.global_ect.exceededMaxTime():
-                end_message = "END_VALIDATION" if self.sso.isValidation else "END_TRAINING"
-                self.io.writeToServer(self.lastMessageId, end_message, self.LOG)
-            else:
-                self.io.writeToServer(self.lastMessageId, str(nextLevel) + "#" + self.lastSsoType, self.LOG)
+            self.io.writeToServer(
+                self.lastMessageId,
+                f"{str(nextLevel)}#{self.lastSsoType}",
+                self.LOG,
+            )

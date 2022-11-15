@@ -54,8 +54,7 @@ class ElapsedCpuTimer:
         self.oldTime = self.getTime()
 
     def remainingTimeMillis(self):
-        diff = self.maxTime - self.elapsed()
-        return diff
+        return self.maxTime - self.elapsed()
 
     def exceededMaxTime(self):
         return self.elapsed() > self.maxTime

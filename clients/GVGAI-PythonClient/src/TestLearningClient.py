@@ -14,10 +14,7 @@ from ClientComm import ClientComm
 if __name__ == "__main__":
 
     # read arguments
-    if CompetitionParameters.OS_WIN:
-        serverDirDefault = '..\\..\\..'
-    else:
-        serverDirDefault = '../../..'
+    serverDirDefault = '..\\..\\..' if CompetitionParameters.OS_WIN else '../../..'
     parser = argparse.ArgumentParser(description="TestLearningClient.py")
     parser.add_argument('TestLearningClient.py')
     parser.add_argument('-gameId', action="store", dest='gameId', type=int, default=0)
@@ -39,26 +36,33 @@ if __name__ == "__main__":
     gameFile = args.gameFile
     levelFile = args.levelFile
 
-    print("Run game " + str(gameId) + " with agent " + agentName)
+    print(f"Run game {str(gameId)} with agent {agentName}")
     if args.serverJar == '':
         if CompetitionParameters.OS_WIN:
             scriptFile = shDir + "\\runServer_nocompile_python.bat " + str(gameId) + " " + str(serverDir) + " " + str(visuals)
         else:
-            scriptFile = os.path.join(shDir, "runServer_nocompile_python.sh " + str(gameId) + " " + str(serverDir) +
-                                      " " + str(visuals))
+            scriptFile = os.path.join(
+                shDir,
+                f"runServer_nocompile_python.sh {str(gameId)} {str(serverDir)} {str(visuals)}",
+            )
+
     else:
         # scriptFile = os.path.join(shDir, "runServer_compile.sh " + str(args.serverJar) + " " + str(gameId) + " " + str(serverDir))
-        scriptFile = os.path.join(shDir, "runServer_compile.sh " + str(args.serverJar) + " " + str(gameId) + " " + str(serverDir) + " " + gameFile + " " + levelFile)
+        scriptFile = os.path.join(
+            shDir,
+            f"runServer_compile.sh {str(args.serverJar)} {str(gameId)} {str(serverDir)} {gameFile} {levelFile}",
+        )
+
 
     try:
-        print("scriptFile to run is: "+scriptFile)
+        print(f"scriptFile to run is: {scriptFile}")
         p = subprocess.Popen(scriptFile, shell=True)
         print("Run server process [OK]")
         # print(str(os.getcwd()))
         # stdout, stderr = p.communicate()
         print("Run server communicate [OK]")
         ccomm = ClientComm(agentName)
-        print("Start comm with agent " + agentName)
+        print(f"Start comm with agent {agentName}")
         ccomm.startComm()
         print("Server process finished [OK]")
     except Exception as e:
