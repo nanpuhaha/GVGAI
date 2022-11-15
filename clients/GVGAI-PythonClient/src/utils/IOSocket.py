@@ -25,7 +25,7 @@ class IOSocket:
         self.logfile = open(self.logfilename, "a")
 
     def initBuffers(self):
-        print ("Connecting to host " + str(self.hostname) + " at port " + str(self.port) + " ...")
+        print(f"Connecting to host {str(self.hostname)} at port {str(self.port)} ...")
         while not self.connected:
             try:
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -56,14 +56,13 @@ class IOSocket:
                 self.writeToFile(msg.strip('\n'))
         except Exception as e:
             logging.exception(e)
-            print ("Write " + self.logfilename + " to server [FAILED]")
+            print(f"Write {self.logfilename} to server [FAILED]")
             traceback.print_exc()
             sys.exit()
 
     def readLine(self):
         try:
-            msg = self.recv_end()
-            return msg
+            return self.recv_end()
         except Exception as e:
             logging.exception(e)
             print ("Read from server [FAILED]")

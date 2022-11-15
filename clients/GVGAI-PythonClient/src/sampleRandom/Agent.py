@@ -35,9 +35,8 @@ class Agent(AbstractPlayer):
     def act(self, sso, elapsedTimer):
         if sso.gameTick == 1000:
             return "ACTION_ESCAPE"
-        else:
-            index = random.randint(0, len(sso.availableActions) - 1)
-            return sso.availableActions[index]
+        index = random.randint(0, len(sso.availableActions) - 1)
+        return sso.availableActions[index]
 
     """
     * Method used to perform actions in case of a game end.
